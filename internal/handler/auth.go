@@ -14,13 +14,13 @@ func (h Handler) authHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.AuthRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"errors": "Invalid request"}`, http.StatusBadRequest)
+		http.Error(w, `Ошибка декодирования`, http.StatusBadRequest)
 		return
 	}
 
 	token, err := h.service.Authenticate(ctx, req.Username, req.Password)
 	if err != nil {
-		http.Error(w, `{"errors": "Invalid credentials"}`, http.StatusUnauthorized)
+		http.Error(w, `Ошибка создания токена`, http.StatusUnauthorized)
 		return
 	}
 

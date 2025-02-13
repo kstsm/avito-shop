@@ -2,13 +2,20 @@ package handler
 
 import (
 	"github.com/go-chi/chi"
+	"github.com/kstsm/avito-shop/internal/middleware"
 	"github.com/kstsm/avito-shop/internal/service"
 	"net/http"
 )
 
 type HandlerI interface {
-	getApiInfoHandler(w http.ResponseWriter, r *http.Request)
 	NewRouter() http.Handler
+
+	authHandler(w http.ResponseWriter, r *http.Request)
+
+	getUserInfoHandler(w http.ResponseWriter, r *http.Request)
+	sendCoinsHandler(w http.ResponseWriter, r *http.Request)
+
+	buyItemHandler(w http.ResponseWriter, r *http.Request)
 }
 
 type Handler struct {
@@ -26,13 +33,13 @@ func (h Handler) NewRouter() http.Handler {
 
 	router.Route("/api", func(r chi.Router) {
 		r.Post("/auth", h.authHandler)
-		
-		r.Post("/info", h.getApiInfoHandler)
-	})
 
-	/*router.Route("/house", func(r chi.Router) {
-		r.With(h.AuthMW.JWTAuth).Post("/create", h.CreateHouseHandler)
-	})*/
+		r.With(middleware.AuthMiddleware()).Group(func(r chi.Router) {
+			r.Get("/info", h.getUserInfoHandler)
+			r.Get("/buy/{item}", h.buyItemHandler)
+			r.Post("/sendCoin", h.sendCoinsHandler)
+		})
+	})
 
 	return router
 }

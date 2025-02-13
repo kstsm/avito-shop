@@ -3,59 +3,59 @@ package auth
 import (
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/gookit/slog"
 	"github.com/kstsm/avito-shop/config"
+	"log"
 	"time"
 )
 
-//var secretKey = []byte("superstructure")
+func GenerateToken(userID int) (string, error) {
+	secretKey := []byte(config.Config.JWT.JWTSecret)
+	tokenExpiry := config.Config.JWT.TokenExpiry
 
-func GenerateToken(username string) (string, error) {
-	// Получаем secretKey и tokenExpiry из конфигурации
-	secretKey := []byte(config.Config.JWTSecret.JWTSecret) // Преобразуем строку в байты для подписи
-	tokenExpiry := config.Config.JWTSecret.TokenExpiry     // Время жизни токена (уже как time.Duration)
-
-	// Создаем claims для токена
 	claims := jwt.MapClaims{
-		"username": username,
-		"exp":      time.Now().Add(tokenExpiry).Unix(), // Используем tokenExpiry из конфигурации
+		"userID": float64(userID),
+		"exp":    time.Now().Add(tokenExpiry).Unix(),
 	}
 
-	// Генерируем новый токен с указанием метода подписи
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Возвращаем подписанный токен
 	return token.SignedString(secretKey)
 }
 
-func ValidateToken(tokenString string) (string, error) {
-	// Получаем секретный ключ из конфигурации
-	secretKey := []byte(config.Config.JWTSecret.JWTSecret)
+func ValidateToken(tokenString string) (int, error) {
+	secretKey := []byte(config.Config.JWT.JWTSecret)
 
-	// Парсим токен, проверяя подпись
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Проверка метода подписи
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("неверный метод подписи")
 		}
 		return secretKey, nil
 	})
+
 	if err != nil {
-		slog.Errorf("Ошибка при валидации токена: %v", err)
-		return "", err
+		log.Printf("Ошибка при валидации токена: %v\n", err)
+		return 0, err
 	}
 
-	// Проверка валидности токена (включает проверку exp)
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		// Проверяем срок действия токена
-		exp := claims["exp"].(float64)
-		if time.Now().Unix() > int64(exp) {
-			slog.Warnf("Токен истек в %v", time.Unix(int64(exp), 0))
-			return "", errors.New("токен истек")
-		}
-		return claims["username"].(string), nil
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		log.Println("Неверный токен или поврежденные данные")
+		return 0, errors.New("неверный токен")
 	}
 
-	slog.Warn("Неверный токен или невалидные данные в токене")
-	return "", errors.New("неверный токен")
+	expFloat, ok := claims["exp"].(float64)
+	if !ok {
+		return 0, errors.New("поле exp отсутствует или неверного типа")
+	}
+	if time.Now().Unix() > int64(expFloat) {
+		return 0, errors.New("токен истек")
+	}
+
+	userIDFloat, ok := claims["userID"].(float64)
+	if !ok {
+		return 0, errors.New("поле userID отсутствует или неверного типа")
+	}
+
+	userID := int(userIDFloat)
+
+	return userID, nil
 }

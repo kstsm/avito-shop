@@ -9,9 +9,9 @@ import (
 var Config config
 
 type config struct {
-	Server    Server
-	Postgres  Postgres
-	JWTSecret JWTSecret
+	Server   Server
+	Postgres Postgres
+	JWT      JWT
 }
 
 type Server struct {
@@ -28,7 +28,7 @@ type Postgres struct {
 	SSLMode  string
 }
 
-type JWTSecret struct {
+type JWT struct {
 	JWTSecret   string
 	TokenExpiry time.Duration
 }
@@ -59,7 +59,7 @@ func init() {
 			DBName:   viper.GetString("POSTGRES_DB"),
 			SSLMode:  viper.GetString("DB_SSLMODE"),
 		},
-		JWTSecret: JWTSecret{
+		JWT: JWT{
 			JWTSecret:   viper.GetString("SECRET_KEY"),
 			TokenExpiry: tokenExpiry,
 		},

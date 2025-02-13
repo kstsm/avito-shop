@@ -3,9 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/gookit/slog"
 	"github.com/jackc/pgx/v5"
 	"github.com/kstsm/avito-shop/config"
-	"log"
 )
 
 type Repository struct {
@@ -26,7 +26,7 @@ func InitPostgres() *pgx.Conn {
 
 	conn, err := pgx.Connect(context.Background(), dsn)
 	if err != nil {
-		log.Printf("Ошибка подключения к базе данных: %v", err)
+		slog.Fatal("Ошибка подключения к базе данных: %v", err)
 	}
 
 	return conn
