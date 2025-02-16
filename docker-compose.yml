@@ -1,25 +1,25 @@
 version: '3.8'
 
 services:
-#  avito-shop-service:
-#    build: .
-#    container_name: avito-shop-service
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      # енвы подключения к БД
-#      - DATABASE_PORT=5432
-#      - DATABASE_USER=postgres
-#      - DATABASE_PASSWORD=password
-#      - DATABASE_NAME=shop
-#      - DATABASE_HOST=db
-#      # порт сервиса
-#      - SERVER_PORT=8080
-#    depends_on:
-#      db:
-#        condition: service_healthy
-#    networks:
-#      - internal
+  avito-shop-service:
+    build: .
+    container_name: avito-shop-service
+    ports:
+      - "8080:8080"
+    environment:
+      # Переменные подключения к БД
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=password
+      - DATABASE_NAME=shop
+      - DATABASE_HOST=db
+      # Порт сервиса
+      - SERVER_PORT=8080
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
 
   db:
     image: postgres:16-alpine
@@ -29,17 +29,38 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_DB: "${POSTGRES_DB}"
     volumes:
-      # "./migrations/init.sql" - путь к миграциям БД
       - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "sh -c 'pg_isready -U postgres -d shop'"]
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U postgres -d shop'" ]
       interval: 5s
       timeout: 10s
       retries: 5
       start_period: 10s
     networks:
       - internal
+
+  db_test:
+    image: postgres:16-alpine
+    container_name: postgres_test
+    environment:
+      POSTGRES_USER: "${TEST_POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${TEST_POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${TEST_POSTGRES_DB}"
+    volumes:
+      - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"  # Порт для тестовой базы данных
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U test_user -d test_db'" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - internal
+
 networks:
   internal:
+    driver: bridge

@@ -1,29 +1,33 @@
 package handler
 
 import (
-	"context"
-	"encoding/json"
+	"errors"
+	"github.com/gookit/slog"
 	"github.com/kstsm/avito-shop/api/rest/models"
+	"github.com/kstsm/avito-shop/internal/apperrors"
 	"net/http"
 )
 
 func (h Handler) authHandler(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	var req models.AuthRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `Ошибка декодирования`, http.StatusBadRequest)
+	if err := parseAndValidateRequest(r, &req); err != nil {
+		slog.Warn("Ошибка валидации запроса", "error", err)
+		WriteErrorResponse(w, http.StatusBadRequest, err.Errors)
 		return
 	}
 
-	token, err := h.service.Authenticate(ctx, req.Username, req.Password)
+	token, err := h.service.Authenticate(h.ctx, req.Username, req.Password)
 	if err != nil {
-		http.Error(w, `Ошибка создания токена`, http.StatusUnauthorized)
+		switch {
+		case errors.Is(err, apperrors.ErrInvalidCredentials):
+			slog.Warn("Ошибка аутентификации", "username", req.Username, "error", err.Error())
+			WriteErrorResponse(w, http.StatusUnauthorized, "Неверное имя пользователя или пароль")
+		default:
+			slog.Error("Внутренняя ошибка сервера", "error", err.Error())
+			WriteErrorResponse(w, http.StatusInternalServerError, "Внутренняя ошибка сервера")
+		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(models.AuthResponse{Token: token})
+	sendJSONResponse(w, http.StatusOK, models.AuthResponse{Token: token})
 }

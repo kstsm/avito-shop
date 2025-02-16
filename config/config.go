@@ -3,7 +3,6 @@ package config
 import (
 	"github.com/gookit/slog"
 	"github.com/spf13/viper"
-	"time"
 )
 
 var Config config
@@ -29,8 +28,7 @@ type Postgres struct {
 }
 
 type JWT struct {
-	JWTSecret   string
-	TokenExpiry time.Duration
+	JWTSecret string
 }
 
 func init() {
@@ -38,12 +36,6 @@ func init() {
 
 	if err := viper.ReadInConfig(); err != nil {
 		slog.Errorf("Ошибка при чтении конфигурации: %s", err)
-	}
-
-	tokenExpiry, err := time.ParseDuration(viper.GetString("TOKEN_EXPIRY"))
-	if err != nil {
-		slog.Errorf("Ошибка при парсинге длительности токена: %s", err)
-		tokenExpiry = time.Hour * 24
 	}
 
 	Config = config{
@@ -57,12 +49,9 @@ func init() {
 			Host:     viper.GetString("POSTGRES_HOST"),
 			Port:     viper.GetString("POSTGRES_PORT"),
 			DBName:   viper.GetString("POSTGRES_DB"),
-			SSLMode:  viper.GetString("DB_SSLMODE"),
 		},
 		JWT: JWT{
-			JWTSecret:   viper.GetString("SECRET_KEY"),
-			TokenExpiry: tokenExpiry,
+			JWTSecret: viper.GetString("SECRET_KEY"),
 		},
 	}
-
 }

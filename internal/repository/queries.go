@@ -33,16 +33,18 @@ const (
 	`
 	QueryTransferCoins = `
 		WITH updated AS (
-    		UPDATE users
-        		SET balance = CASE
-                          WHEN id = $1 THEN balance - $2 
-                          WHEN id = $3 THEN balance + $2
-            		END
-        		WHERE id IN ($1, $3)
-        		RETURNING id)
-		SELECT COUNT(*)
-		FROM updated;
-	`
+    UPDATE users
+    SET balance = CASE
+                    WHEN id = $1 THEN balance - $2 
+                    WHEN id = $3 THEN balance + $2
+                  END
+    WHERE id IN ($1, $3)
+    RETURNING id
+)
+-- Проверим, что обновились две строки (одна для отправителя и одна для получателя)
+SELECT COUNT(*)
+FROM updated
+WHERE id IN ($1, $3);`
 
 	QueryGetUserInfo = `
 SELECT json_build_object(

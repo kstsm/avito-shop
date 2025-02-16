@@ -10,5 +10,5 @@ func (s Service) GetUserInfo(ctx context.Context, userID int) (models.InfoRespon
 }
 
 func (s Service) SendCoins(ctx context.Context, amount, senderID int, username string) error {
-	return s.repo.TransferCoins(ctx, senderID, amount, username)
+	return s.repo.SendCoins(ctx, senderID, amount, username)
 }
