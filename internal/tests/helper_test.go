@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kstsm/avito-shop/api/rest/models"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -56,7 +56,7 @@ func sendCoinsExpectFailure(t *testing.T, server *httptest.Server, client *http.
 	return resp
 }
 
-func getUserBalance(t *testing.T, conn *pgx.Conn, ctx context.Context, username string) int {
+func getUserBalance(t *testing.T, conn *pgxpool.Pool, ctx context.Context, username string) int {
 	var balance int
 	err := conn.QueryRow(ctx, "SELECT balance FROM users WHERE username = $1", username).Scan(&balance)
 	if err != nil {

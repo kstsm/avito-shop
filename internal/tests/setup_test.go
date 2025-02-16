@@ -2,7 +2,7 @@ package tests
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kstsm/avito-shop/database"
 	"github.com/kstsm/avito-shop/internal/handler"
 	"github.com/kstsm/avito-shop/internal/repository"
@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func SetupTestServer(t *testing.T) (*httptest.Server, context.Context, *pgx.Conn) {
+func SetupTestServer(t *testing.T) (*httptest.Server, context.Context, *pgxpool.Pool) {
 	ctx := context.Background()
 	conn, err := database.InitTestPostgres(ctx)
 	if err != nil {
@@ -22,10 +22,9 @@ func SetupTestServer(t *testing.T) (*httptest.Server, context.Context, *pgx.Conn
 		t.Fatalf("Ошибка при проверке подключения к базе данных: %v", err)
 	}
 
+	// Закрываем соединение с БД в конце теста
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка закрытия соединения с базой данных: %v", err)
-		}
+		conn.Close() // Убираем проверку ошибки, т.к. Close() ничего не возвращает
 	})
 
 	repo := repository.NewRepository(conn)

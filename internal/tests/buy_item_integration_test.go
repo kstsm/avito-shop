@@ -18,9 +18,7 @@ func TestBuyItem(t *testing.T) {
 	defer server.Close()
 
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка при закрытии подключения к базе данных: %v", err)
-		}
+		conn.Close()
 	})
 
 	client, token := authenticate(t, server, "buyer", "password")
@@ -72,11 +70,8 @@ func TestBuyItemInsufficientFunds(t *testing.T) {
 	defer server.Close()
 
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка при закрытии подключения к базе данных: %v", err)
-		}
+		conn.Close()
 	})
-
 	client, token := authenticate(t, server, "testuser", "password")
 
 	_, err := conn.Exec(ctx, `UPDATE users SET balance = 0 WHERE username = $1`, "testuser")
@@ -94,13 +89,11 @@ func TestBuyItemInsufficientFunds(t *testing.T) {
 }
 
 func TestBuyItemNotFound(t *testing.T) {
-	server, ctx, conn := SetupTestServer(t)
+	server, _, conn := SetupTestServer(t)
 	defer server.Close()
 
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка при закрытии подключения к базе данных: %v", err)
-		}
+		conn.Close()
 	})
 
 	client, token := authenticate(t, server, "testuser", "password")
@@ -122,13 +115,11 @@ func TestBuyItemNotFound(t *testing.T) {
 }
 
 func TestBuyItemUnauthorized(t *testing.T) {
-	server, ctx, conn := SetupTestServer(t)
+	server, _, conn := SetupTestServer(t)
 	defer server.Close()
 
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка при закрытии подключения к базе данных: %v", err)
-		}
+		conn.Close()
 	})
 	client := http.DefaultClient
 	req, err := http.NewRequest("GET", server.URL+"/api/buy/t-shirt", nil)
@@ -142,13 +133,13 @@ func TestBuyItemUnauthorized(t *testing.T) {
 
 func TestBuyItem_500(t *testing.T) {
 	ctx := context.Background()
-	conn, err := database.InitTestPostgres(ctx)
+	pool, err := database.InitTestPostgres(ctx)
 	require.NoError(t, err)
-	defer conn.Close(ctx)
+	defer pool.Close()
 
-	repo := repository.NewRepository(conn)
+	repo := repository.NewRepository(pool)
 
-	conn.Close(ctx)
+	pool.Close()
 
 	err = repo.BuyItem(ctx, 1, "test_item")
 	require.Error(t, err)

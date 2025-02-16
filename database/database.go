@@ -4,18 +4,18 @@ import (
 	"context"
 	"fmt"
 	"github.com/gookit/slog"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kstsm/avito-shop/config"
-	"os"
+	"log"
 )
 
 type Repository struct {
-	dg *pgx.Conn
+	dg *pgxpool.Pool
 }
 
 var cfg = config.Config
 
-func InitPostgres(ctx context.Context) *pgx.Conn {
+func InitPostgres(ctx context.Context) *pgxpool.Pool {
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
 		cfg.Postgres.Username,
@@ -30,17 +30,23 @@ func InitPostgres(ctx context.Context) *pgx.Conn {
 		"port", cfg.Postgres.Port, "db", cfg.Postgres.DBName,
 	)
 
-	conn, err := pgx.Connect(ctx, dsn)
+	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		slog.Fatal("Ошибка подключения к базе данных: %v", err)
-		os.Exit(1)
+		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
 	}
 
-	slog.Info("Успешное подключение к базе данных")
-	return conn
+	fmt.Println("Успешное подключение к базе данных")
+
+	err = pool.Ping(ctx)
+	if err != nil {
+		log.Fatalf("Ошибка проверки соединения с БД: %v", err)
+	}
+	fmt.Println("База данных доступна")
+
+	return pool
 }
 
-func InitTestPostgres(ctx context.Context) (*pgx.Conn, error) {
+func InitTestPostgres(ctx context.Context) (*pgxpool.Pool, error) {
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
 		"test_user",
@@ -55,12 +61,11 @@ func InitTestPostgres(ctx context.Context) (*pgx.Conn, error) {
 		"port", cfg.Postgres.Port, "db", cfg.Postgres.DBName,
 	)
 
-	conn, err := pgx.Connect(ctx, dsn)
+	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		slog.Fatal("Ошибка подключения к базе данных", "error", err)
-		return nil, err
+		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
 	}
 
 	slog.Info("Успешное подключение к базе данных")
-	return conn, nil
+	return pool, nil
 }

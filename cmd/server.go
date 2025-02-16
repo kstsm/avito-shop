@@ -24,7 +24,7 @@ func Run() {
 	defer stop()
 
 	conn := database.InitPostgres(ctx)
-	defer conn.Close(ctx)
+	defer conn.Close()
 
 	repo := repository.NewRepository(conn)
 	svc := service.NewService(repo)

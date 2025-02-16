@@ -12,25 +12,27 @@ import (
 )
 
 func TestSuccessfulTransfer(t *testing.T) {
-	server, ctx, conn := SetupTestServer(t)
+	server, ctx, pool := SetupTestServer(t)
 	defer server.Close()
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка закрытия соединения с базой данных: %v", err)
-		}
+		pool.Close()
 	})
-	conn.Exec(ctx, `UPDATE users SET balance = 100 WHERE username = $1`, "senderuser")
+
+	_, err := pool.Exec(ctx, `UPDATE users SET balance = 100 WHERE username = $1`, "senderuser")
+	if err != nil {
+		t.Fatalf("Ошибка обновления баланса: %v", err)
+	}
 
 	client, token := authenticate(t, server, "senderuser", "password")
 	authenticate(t, server, "receiveruser", "password")
 
-	senderBalanceBefore := getUserBalance(t, conn, ctx, "senderuser")
-	receiverBalanceBefore := getUserBalance(t, conn, ctx, "receiveruser")
+	senderBalanceBefore := getUserBalance(t, pool, ctx, "senderuser")
+	receiverBalanceBefore := getUserBalance(t, pool, ctx, "receiveruser")
 
 	sendCoins(t, server, client, token, "receiveruser", 100)
 
-	senderBalanceAfter := getUserBalance(t, conn, ctx, "senderuser")
-	receiverBalanceAfter := getUserBalance(t, conn, ctx, "receiveruser")
+	senderBalanceAfter := getUserBalance(t, pool, ctx, "senderuser")
+	receiverBalanceAfter := getUserBalance(t, pool, ctx, "receiveruser")
 
 	if senderBalanceAfter != senderBalanceBefore-100 {
 		t.Fatalf("Баланс отправителя некорректен: ожидался %d, но получен %d", senderBalanceBefore-100, senderBalanceAfter)
@@ -59,9 +61,7 @@ func TestInsufficientBalance(t *testing.T) {
 	server, ctx, conn := SetupTestServer(t)
 	defer server.Close()
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка закрытия соединения с базой данных: %v", err)
-		}
+		conn.Close()
 	})
 
 	client, token := authenticate(t, server, "senderuser", "password")
@@ -93,9 +93,7 @@ func TestTransferZeroCoins(t *testing.T) {
 	server, ctx, conn := SetupTestServer(t)
 	defer server.Close()
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка закрытия соединения с базой данных: %v", err)
-		}
+		conn.Close()
 	})
 	_, err := conn.Exec(ctx, "UPDATE users SET balance = 0 WHERE username = $1", "senderuser")
 
@@ -113,9 +111,7 @@ func TestTransferToNonExistentUser(t *testing.T) {
 	server, ctx, conn := SetupTestServer(t)
 	defer server.Close()
 	t.Cleanup(func() {
-		if err := conn.Close(ctx); err != nil {
-			t.Errorf("Ошибка закрытия соединения с базой данных: %v", err)
-		}
+		conn.Close()
 	})
 	_, err := conn.Exec(ctx, "UPDATE users SET balance = 100 WHERE username = $1", "senderuser")
 
@@ -134,13 +130,13 @@ func TestTransferToNonExistentUser(t *testing.T) {
 
 func TestSendCoin_500(t *testing.T) {
 	ctx := context.Background()
-	conn, err := database.InitTestPostgres(ctx)
+	pool, err := database.InitTestPostgres(ctx)
 	require.NoError(t, err)
-	defer conn.Close(ctx)
+	defer pool.Close()
 
-	repo := repository.NewRepository(conn)
+	repo := repository.NewRepository(pool)
 
-	conn.Close(ctx)
+	pool.Close()
 	err = repo.SendCoins(ctx, 1, 2, "username")
 
 	require.Error(t, err)

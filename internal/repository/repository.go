@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kstsm/avito-shop/api/rest/models"
 )
 
@@ -15,10 +15,10 @@ type RepositoryI interface {
 }
 
 type Repository struct {
-	conn *pgx.Conn
+	conn *pgxpool.Pool
 }
 
-func NewRepository(conn *pgx.Conn) RepositoryI {
+func NewRepository(conn *pgxpool.Pool) RepositoryI {
 	return &Repository{
 		conn: conn,
 	}
