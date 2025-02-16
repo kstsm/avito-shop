@@ -1,25 +1,25 @@
 version: '3.8'
 
 services:
-#  avito-shop-service:
-#    build: .
-#    container_name: avito-shop-service
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      # Переменные подключения к БД
-#      - DATABASE_PORT=5432
-#      - DATABASE_USER=postgres
-#      - DATABASE_PASSWORD=password
-#      - DATABASE_NAME=shop
-#      - DATABASE_HOST=db
-#      # Порт сервиса
-#      - SERVER_PORT=8080
-#    depends_on:
-#      db:
-#        condition: service_healthy
-#    networks:
-#      - internal
+  avito-shop-service:
+    build: .
+    container_name: avito-shop-service
+    ports:
+      - "8080:8080"
+    environment:
+      # Переменные подключения к БД
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=password
+      - DATABASE_NAME=shop
+      - DATABASE_HOST=db
+      # Порт сервиса
+      - SERVER_PORT=8080
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
 
   db:
     image: postgres:16-alpine
