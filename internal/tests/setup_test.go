@@ -21,10 +21,8 @@ func SetupTestServer(t *testing.T) (*httptest.Server, context.Context, *pgxpool.
 	if err = conn.Ping(ctx); err != nil {
 		t.Fatalf("Ошибка при проверке подключения к базе данных: %v", err)
 	}
-
-	// Закрываем соединение с БД в конце теста
 	t.Cleanup(func() {
-		conn.Close() // Убираем проверку ошибки, т.к. Close() ничего не возвращает
+		conn.Close()
 	})
 
 	repo := repository.NewRepository(conn)

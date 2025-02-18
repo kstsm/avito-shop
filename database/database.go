@@ -51,8 +51,8 @@ func InitTestPostgres(ctx context.Context) (*pgxpool.Pool, error) {
 		"postgres://%s:%s@%s:%s/%s",
 		"test_user",
 		"test_pass",
-		"localhost",
-		"5433",
+		"postgres_test",
+		"5432",
 		"test_db",
 	)
 
