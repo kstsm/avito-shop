@@ -29,8 +29,8 @@ const (
 
 	QueryInsertTransaction = `
 		INSERT INTO transactions (from_user, to_user, amount) 
-		VALUES ($1, $2, $3);
-	`
+		VALUES ($1, $2, $3);`
+	
 	QueryTransferCoins = `
 		WITH updated AS (
     UPDATE users
@@ -41,7 +41,6 @@ const (
     WHERE id IN ($1, $3)
     RETURNING id
 )
--- Проверим, что обновились две строки (одна для отправителя и одна для получателя)
 SELECT COUNT(*)
 FROM updated
 WHERE id IN ($1, $3);`
@@ -71,6 +70,5 @@ SELECT json_build_object(
   )
 ) 
 FROM users u 
-WHERE u.id = $1;
-`
+WHERE u.id = $1;`
 )
